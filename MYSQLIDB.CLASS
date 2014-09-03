@@ -1,0 +1,238 @@
+<?php
+/********************************************************
+////////////////////////////////////////////////////////
+//@package Script - Class DataBase		             //
+//@author Sameh Sabri <Sameh.Elhassany@Gmail.Com>	//
+//@version 1.0 <2014/02/28>						   //	
+//@copyright Sameh Sabri 						  //
+///////////////////////////////////////////////////
+*******************************************************/
+class MySqliDb
+{
+	private $host;
+	private $user;
+	private $pasw;
+	private $db;
+	
+	public $Conction;
+	//ميثود لجلب ملف الاتصال
+	public function  __construct($file_config_db)
+	{
+		
+		if(is_file($file_config_db))
+		{
+			require_once($file_config_db);
+			$this->host = $HOSTNAME;
+			$this->user = $USERNAME;
+			$this->pasw = $PASSWORD;
+			$this->db   = $DB_NAME;
+		}
+		else
+		{
+			exit("من فضلك ، تأكد من رفع كامل الملفات");
+		}
+	}
+	//ميثود فتح الاتصال
+	public function OpenConnction()
+	{
+		if($this->host && $this->user && $this->db != NULL && $this->Conction == false)
+		{
+		$this->Conction = mysqli_connect($this->host,$this->user,$this->pasw,$this->db);
+							  mysqli_query($this->Conction,"SET NAMES 'utf8'");
+							  $connect = $this->Conction;
+							  return $connect;
+		}
+		else
+		{
+			exit("من فضلك ، قم بتعبئة ملف الأتصال (Function_Config.php)");
+		}
+		if($this->Conction != TRUE)
+		{
+			exit("من فضلك ، تأكد من كتابة البيانات الصحيحة");
+		}
+
+	}
+	//ميثود اغلاق الاتصال
+	public function CloseConnction()
+	{
+		if($this->Conction == TRUE)
+		{
+			$this->Conction = mysqli_close($this->Conction);
+		}
+	}
+	//ميثود عامة لعمل جلب لبيانات جدول من قاعدة البيانات
+	public function ExucomSelect($TableName,$OrderByColumn,$Column)
+	{
+		//تحقق ان البارامترات ليست فارغة وتحتوي على قيمة على الاقل بارامتر واحد
+		if($Column && $TableName && $OrderByColumn == NULL)
+		{
+			$empty = "رجاء استخدام على الاقل (1) بارا متر عند استخدام هذه الدالة.";
+			return $empty;
+		}
+		//بيرجع كل كولم من الجدول بترتيب الكولم
+		elseif($TableName && $OrderByColumn && $Column == TRUE )
+		{
+			$DataTpl = mysqli_query
+					($this->Conction,"SELECT $Column FROM $TableName ORDER By $OrderByColumn");
+			if(mysqli_num_rows($DataTpl) >= 0)
+			{
+				$empty = "لا توجد بيانات داخل هذا الجدول";
+				return $empty;
+			}
+			$DataTpl = mysqli_fetch_object($DataTpl);
+			return $DataTpl;
+		}
+		//بيرجع كل الدتا من الجدول بترتيب الكولم
+		elseif($TableName && $OrderByColumn == TRUE && empty($Column) )
+		{
+			$DataTpl = mysqli_query
+					($this->Conction,"SELECT * FROM $TableName ORDER By $OrderByColumn");
+			if(mysqli_num_rows($DataTpl) >= 0)
+			{
+				$empty = "لا توجد بيانات داخل هذا الجدول";
+				return $empty;
+			}
+			$DataTpl = mysqli_fetch_object($DataTpl);
+			return $DataTpl;
+		}
+		//بيرجع كل الداتا للكولم من الجدول المطلوب
+		elseif($TableName && $Column == TRUE && empty($OrderByColumn) )
+		{
+			$DataTpl = mysqli_query
+					($this->Conction,"SELECT $Column FROM $TableName");
+			if(mysqli_num_rows($DataTpl) >= 0)
+			{
+				$empty = "لا توجد بيانات داخل هذا الجدول";
+				return $empty;
+			}
+			$DataTpl = mysqli_fetch_object($DataTpl);
+			return $DataTpl;
+		}
+		//بيرجع كل الدتا من الجدول
+		elseif($OrderByColumn && $Column == NULL && $TableName == TRUE)
+		{
+			$DataTpl = mysqli_query
+					($this->Conction,"SELECT * FROM $TableName");
+			if(mysqli_num_rows($DataTpl) >= 0)
+			{
+				$empty = "لا توجد بيانات داخل هذا الجدول";
+				return $empty;
+			}
+			$DataTpl = mysqli_fetch_object($DataTpl);
+			return $DataTpl;
+		}
+	}
+	//ادخال بيانات لجدول بقاعدة البيانات وترجع بقيمة 0-1
+	public function ExuComInsertData($TablName,$Array)
+	{
+		if(is_array($Array) && $TablName != NULL)
+		{
+			foreach($Array as $kayes => $values)
+			{
+				$Column[]     = $kayes;
+				$DataColumn[] = $values;
+			}
+			$Column     = implode($Column,",");
+			$DataColumn = '"'. implode($DataColumn,'","') .'"';
+			if($DataTpl = @mysqli_query($this->Conction,"INSERT INTO `$TablName`($Column) VALUES ($DataColumn)"))
+			{
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+		else
+		{
+			$empty = "رجاء ادخال اسم الجدول ومصفوفة البيانات";
+			return $empty;
+		}
+	}
+	//
+	//return query tabl
+	public function QueryResult($query)
+	{
+		$this->OpenConnction();
+		if($result = mysqli_query($this->Conction,$query))
+		{
+			if(mysqli_num_rows($result) <= 1)
+			{
+				return $result;
+			}
+			else
+			{
+				return false;
+			}
+		}
+	}
+	//return query With out shart
+	public function QueryResultWithOut($query)
+	{
+		$this->OpenConnction();
+		if($result = mysqli_query($this->Conction,$query))
+		{
+			return $result;
+			
+		}
+		else
+		{
+			return false;
+		}
+	}
+	//
+	//Query Update With Value = Array
+	public function UPDateDBQuery($Array,$TablName,$ColumsID=NULL,$ID=NULL)
+	{
+		if(is_array($Array) && !empty($TablName) && !empty($ColumsID) && !empty($ID))
+		{
+			$query = "UPDATE `$TablName` SET ";
+			foreach($Array as $kayes => $Valus)
+			{
+				$query .= "`".$kayes."`='".$Valus."', ";
+			}
+				$patrn = "*_+";
+				$query .= $patrn;
+				$query = str_replace(", ".$patrn," ",$query);
+				$query .=" WHERE `".$ColumsID."` = ".$ID;
+				$this->OpenConnction();
+				$result = mysqli_query($this->Conction,$query);
+				if($result)
+				{
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+		}
+		elseif(is_array($Array) && !empty($TablName))
+		{
+			$query = "UPDATE `$TablName` SET ";
+			foreach($Array as $kayes => $Valus)
+			{
+				$query .= "`".$kayes."`='".$Valus."', ";
+			}
+				$patrn = "*_+";
+				$query .= $patrn;
+				$query = str_replace(", ".$patrn," ",$query);
+				$this->OpenConnction();
+				$result = mysqli_query($this->Conction,$query);
+				if($result)
+				{
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+		}
+		else
+		{
+		}
+	}//
+
+	
+
+}
+?>
